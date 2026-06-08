@@ -1,0 +1,170 @@
+﻿@page "/starsystems"
+@using CosmicCodex.Frontend.DTOs
+@inject HttpClient Http
+
+<PageTitle>Star Systems</PageTitle>
+
+<div class="container mt-4">
+    <h2>Star Systems Management</h2>
+    <p>Manage your cosmic catalog of discovered star systems and celestial bodies.</p>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+        </div>
+    }
+
+    <div class="card my-4 p-3 bg-light">
+        <h5>Discover New Star System</h5>
+        <div class="row g-3 align-items-center">
+            <div class="col-auto">
+                <input type="text" class="form-control" placeholder="System name..." @bind="newSystemName" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" @onclick="CreateSystem">Add System</button>
+            </div>
+        </div>
+    </div>
+
+    @if (starSystems == null && string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading space data...</span>
+        </div>
+    }
+    else if (starSystems != null)
+    {
+        <table class="table table-hover table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var system in starSystems)
+                {
+                    <tr>
+                        <td>@system.Id</td>
+                        <td>
+                            @if (editingSystemId == system.Id)
+                            {
+                                <input type="text" class="form-control form-control-sm w-50 d-inline" @bind="editingSystemName" />
+                                <button class="btn btn-success btn-sm ms-2" @onclick="() => SaveSystemUpdate(system.Id)">Save</button>
+                                <button class="btn btn-secondary btn-sm ms-1" @onclick="CancelEditing">Cancel</button>
+                            }
+                            else
+                            {
+                                @system.Name
+                            }
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-warning btn-sm me-2" @onclick="() => StartEditing(system)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteSystem(system.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<StarSystemDto>? starSystems;
+    private string newSystemName = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private int? editingSystemId = null;
+    private string editingSystemName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStarSystems();
+    }
+
+    private async Task LoadStarSystems()
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            starSystems = await Http.GetFromJsonAsync<List<StarSystemDto>>("api/starsystems");
+        }
+        catch (Exception)
+        {
+            // Fallback message handled if API server is offline
+            errorMessage = "Failed to connect to the galactic API. Please ensure the backend server is running.";
+        }
+    }
+
+    private async Task CreateSystem()
+    {
+        if (string.IsNullOrWhiteSpace(newSystemName)) return;
+
+        try
+        {
+            var newDto = new StarSystemCreateDto { Name = newSystemName };
+            var response = await Http.PostAsJsonAsync("api/starsystems", newDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                newSystemName = string.Empty;
+                await LoadStarSystems();
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Could not register the new star system. Server connection lost.";
+        }
+    }
+
+    private void StartEditing(StarSystemDto system)
+    {
+        editingSystemId = system.Id;
+        editingSystemName = system.Name;
+    }
+
+    private void CancelEditing()
+    {
+        editingSystemId = null;
+        editingSystemName = string.Empty;
+    }
+
+    private async Task SaveSystemUpdate(int id)
+    {
+        if (string.IsNullOrWhiteSpace(editingSystemName)) return;
+
+        try
+        {
+            var updateDto = new StarSystemCreateDto { Name = editingSystemName };
+            var response = await Http.PutAsJsonAsync($"api/starsystems/{id}", updateDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                editingSystemId = null;
+                await LoadStarSystems();
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Failed to apply modifications. Please try again later.";
+        }
+    }
+
+    private async Task DeleteSystem(int id)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/starsystems/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadStarSystems();
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Authorization failed or connection error during deletion.";
+        }
+    }
+}

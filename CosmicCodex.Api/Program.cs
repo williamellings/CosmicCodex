@@ -19,6 +19,7 @@ namespace CosmicCodex.Api
             builder.Services.AddScoped<IPlanetRepository, PlanetRepository>();
             builder.Services.AddScoped<IStarSystemService, StarSystemService>();
             builder.Services.AddScoped<IPlanetService, PlanetService>();
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7155/") });
 
             // Add services to the container.
             builder.Services.AddControllers();
