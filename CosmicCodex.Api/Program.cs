@@ -1,5 +1,6 @@
 using CosmicCodex.Api.Data;
 using CosmicCodex.Api.Repositories;
+using CosmicCodex.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace CosmicCodex.Api
@@ -16,6 +17,8 @@ namespace CosmicCodex.Api
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped<IStarSystemRepository, StarSystemRepository>();
             builder.Services.AddScoped<IPlanetRepository, PlanetRepository>();
+            builder.Services.AddScoped<IStarSystemService, StarSystemService>();
+            builder.Services.AddScoped<IPlanetService, PlanetService>();
 
             // Add services to the container.
             builder.Services.AddControllers();
