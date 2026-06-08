@@ -1,3 +1,5 @@
+using CosmicCodex.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CosmicCodex.Api
 {
@@ -7,8 +9,11 @@ namespace CosmicCodex.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Lägg till databasen i DI-containern
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // Add services to the container.
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
