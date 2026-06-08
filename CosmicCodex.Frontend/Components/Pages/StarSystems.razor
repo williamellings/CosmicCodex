@@ -1,5 +1,4 @@
 ﻿@page "/starsystems"
-@using CosmicCodex.Frontend.DTOs
 @inject HttpClient Http
 
 <PageTitle>Star Systems</PageTitle>
@@ -93,7 +92,6 @@
         }
         catch (Exception)
         {
-            // Fallback message handled if API server is offline
             errorMessage = "Failed to connect to the galactic API. Please ensure the backend server is running.";
         }
     }
@@ -166,5 +164,26 @@
         {
             errorMessage = "Authorization failed or connection error during deletion.";
         }
+    }
+
+    // --- Inline DTO Declarations for clean namespace resolution ---
+    public class StarSystemDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public List<PlanetDto> Planets { get; set; } = new List<PlanetDto>();
+    }
+
+    public class StarSystemCreateDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class PlanetDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool HasLife { get; set; }
+        public int StarSystemId { get; set; }
     }
 }

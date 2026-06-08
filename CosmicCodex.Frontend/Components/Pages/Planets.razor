@@ -1,0 +1,187 @@
+﻿@page "/planets"
+@using CosmicCodex.Frontend.DTOs
+@inject HttpClient Http
+
+<PageTitle>Planeter</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Planet Management</h2>
+        <p class="text-muted mb-0">Hantera upptäckta planeter i ditt kosmiska lexikon.</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger shadow-sm" role="alert">
+            <strong>Fel!</strong> @errorMessage
+        </div>
+    }
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Registrera Ny Planet</h5>
+        </div>
+        <div class="card-body bg-light">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Planetens Namn</label>
+                    <input type="text" class="form-control" placeholder="T.ex. Kepler-186f..." @bind="newPlanet.Name" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Tillhör Stjärnsystem</label>
+                    <select class="form-select" @bind="newPlanet.StarSystemId">
+                        <option value="0">-- Välj stjärnsystem --</option>
+                        @if (starSystems != null)
+                        {
+                            @foreach (var system in starSystems)
+                            {
+                                <option value="@system.Id">@system.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-center mt-4 mb-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="hasLifeSwitch" @bind="newPlanet.HasLife">
+                        <label class="form-check-label ms-2" for="hasLifeSwitch">Livsduglig?</label>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-primary w-100 fw-bold" @onclick="CreatePlanet">
+                        Spara Planet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (planets == null)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laddar rymddata...</span>
+            </div>
+        </div>
+    }
+    else if (!planets.Any())
+    {
+        <div class="alert alert-info shadow-sm text-center">
+            Inga planeter har registrerats ännu. Använd formuläret ovan för att lägga till din första!
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Namn</th>
+                            <th>Livsduglig</th>
+                            <th>Stjärnsystem</th>
+                            <th class="text-end">Åtgärder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var planet in planets)
+                        {
+                            <tr>
+                                <td>@planet.Id</td>
+                                <td class="fw-bold">@planet.Name</td>
+                                <td>
+                                    @if (planet.HasLife)
+                                    {
+                                        <span class="badge bg-success rounded-pill px-3 py-2">Ja</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2">Nej</span>
+                                    }
+                                </td>
+                                <td>
+                                    @(starSystems?.FirstOrDefault(s => s.Id == planet.StarSystemId)?.Name ?? "Okänt ID: " + planet.StarSystemId)
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-outline-danger btn-sm fw-bold" @onclick="() => DeletePlanet(planet.Id)">
+                                        Ta bort
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PlanetDto>? planets;
+    private List<StarSystemDto>? starSystems;
+    private PlanetCreateDto newPlanet = new PlanetCreateDto();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            // Vi hämtar både system och planeter för att kunna visa namnen istället för bara ID
+            starSystems = await Http.GetFromJsonAsync<List<StarSystemDto>>("api/starsystems");
+            planets = await Http.GetFromJsonAsync<List<PlanetDto>>("api/planets");
+        }
+        catch (Exception)
+        {
+            errorMessage = "Kunde inte ansluta till API:et. Kontrollera att backend-servern är igång.";
+        }
+    }
+
+    private async Task CreatePlanet()
+    {
+        if (string.IsNullOrWhiteSpace(newPlanet.Name) || newPlanet.StarSystemId == 0)
+        {
+            errorMessage = "Vänligen ange ett namn och välj vilket stjärnsystem planeten tillhör.";
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/planets", newPlanet);
+            if (response.IsSuccessStatusCode)
+            {
+                newPlanet = new PlanetCreateDto(); // Tömmer formuläret
+                await LoadDataAsync(); // Laddar om listan med den nya planeten
+            }
+            else
+            {
+                errorMessage = "Ett fel uppstod när planeten skulle sparas.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Nätverksfel. Tappade anslutningen till servern.";
+        }
+    }
+
+    private async Task DeletePlanet(int id)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/planets/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadDataAsync();
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Fel vid borttagning av planeten.";
+        }
+    }
+}

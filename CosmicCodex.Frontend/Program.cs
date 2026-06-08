@@ -11,6 +11,8 @@ namespace CosmicCodex.Frontend
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7155/") });
+            builder.Services.AddHttpClient();
 
             var app = builder.Build();
 
