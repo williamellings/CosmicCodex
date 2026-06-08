@@ -1,0 +1,6 @@
+@CosmicCodex.Api_HostAddress = http://localhost:5230
+
+GET {{CosmicCodex.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

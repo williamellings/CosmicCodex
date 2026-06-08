@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="CosmicCodex.Api/CosmicCodex.Api.csproj" />
+  <Project Path="CosmicCodex.Frontend/CosmicCodex.Frontend.csproj" />
+  <Project Path="CosmicCodex.Tests/CosmicCodex.Tests.csproj" />
+</Solution>
