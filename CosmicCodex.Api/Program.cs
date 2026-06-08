@@ -1,4 +1,5 @@
 using CosmicCodex.Api.Data;
+using CosmicCodex.Api.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CosmicCodex.Api
@@ -12,6 +13,9 @@ namespace CosmicCodex.Api
             // Lägg till databasen i DI-containern
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            builder.Services.AddScoped<IStarSystemRepository, StarSystemRepository>();
+            builder.Services.AddScoped<IPlanetRepository, PlanetRepository>();
 
             // Add services to the container.
             builder.Services.AddControllers();
